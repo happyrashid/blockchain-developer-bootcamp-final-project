@@ -1,0 +1,114 @@
+SolidityScan result for Basic - 2/contracts/safe.sol:
+#	NAME	SEVERITY	CONFIDENCE	DESCRIPTION	REMEDIATION
+1.	USE OF FLOATING PRAGMA	low	2	
+Solidity source files indicate the versions of the compiler they can be compiled with using a pragma directive at the top of the solidity file. This can either be a floating pragma or a specific compiler version.
+The contract was found to be using a floating pragma which is not considered safe as it can be compiled with all the versions described.
+
+Not Available
+2.	OUTDATED COMPILER VERSION	low	2	
+Using an outdated compiler version can be problematic especially if there are publicly disclosed bugs and issues that affect the current compiler version.
+
+Not Available
+3.	MISSING PAYABLE IN CALL FUNCTION	informational	0	
+The contract is using a .call() method to make external calls along with passing some Ether as msg.value. Since the function is not marked as payable, the transaction might fail if the contract does not have ETH.
+
+Not Available
+4.	ADDING A RETURN STATEMENT WHEN THE FUNCTION DEFINES A NAMED RETURN VARIABLE IS REDUNDANT	informational	2	
+The contract defines a named return despite having a return statement. This causes redundancy and can lead to potential confusion in the code.
+
+Not Available
+5.	MISSING INDEXED KEYWORDS IN EVENTS	informational	2	
+Events are essential for tracking off-chain data and when the event paraemters are indexed they can be used as filter options which will help getting only the specific data instead of all the logs.
+
+Not Available
+6.	UNNECESSARY CHECKED ARITHMETIC IN LOOP	gas	0	
+Increments inside a loop could never overflow due to the fact that the transaction will run out of gas before the variable reaches its limits. Therefore, it makes no sense to have checked arithmetic in such a place.
+
+Lines: ["50:50"]	
+It is recommended to have the increment value inside the unchecked block to save some gas.
+
+7.	DEFINE CONSTRUCTOR AS PAYABLE	gas	0	
+Developers can save around 10 opcodes and some gas if the constructors are defined as payable.
+
+However, it should be noted that it comes with risks because payable constructors can accept ETH during deployment.
+
+Lines: ["43:55"]	
+It is suggested to mark the constructors as payable to save some gas. Make sure it does not lead to any adverse effects in case an upgrade pattern is involved.
+
+8.	STORAGE VARIABLE CACHING IN MEMORY	gas	0	
+The contract is using the state variable multiple times in the function.
+
+SLOADs are expensive (100 gas after the 1st one) compared to MLOAD/MSTORE (3 gas each).
+
+Lines: ["62:82","62:82","84:97","84:97"]	
+Storage variables read multiple times inside a function should instead be cached in the memory the first time (costing 1 SLOAD) and then read from this cache to avoid multiple SLOADs.
+
+9.	SPLITTING REQUIRE STATEMENTS	gas	1	
+Require statements when combined using operators in a single statement usually lead to a larger deployment gas cost but with each runtime calls, the whole thing ends up being cheaper by some gas units.
+
+Lines: ["45:45"]	
+It is recommended to separate the require statements with one statement/validation per line.
+
+10.	OPTIMIZING ADDRESS ID MAPPING	gas	0	
+Combining multiple address/ID mappings into a single mapping using a struct enhances storage efficiency, simplifies code, and reduces gas costs, resulting in a more streamlined and cost-effective smart contract design.
+
+It saves storage slot for the mapping and depending on the circumstances and sizes of types, it can avoid a Gsset (20000 gas) per mapping combined. Reads and subsequent writes can also be cheaper when a function requires both values and they fit in the same storage slot.
+
+Lines: ["6:6","10:10"]	
+It is suggested to modify the code so that multiple mappings using the address->id parameter are combined into a struct.
+
+11.	GAS OPTIMIZATION IN INCREMENTS	gas	0	
+++i costs less gas compared to i++ or i += 1 for unsigned integers. In i++, the compiler has to create a temporary variable to store the initial value. This is not the case with ++i in which the value is directly incremented and returned, thus, making it a cheaper alternative.
+
+Lines: ["50:50"]	
+Consider changing the post-increments (i++) to pre-increments (++i) as long as the value is not used in any calculations or inside returns. Make sure that the logic of the code is not changed.
+
+12.	CHEAPER INEQUALITIES IN REQUIRE()	gas	1	
+The contract was found to be performing comparisons using inequalities inside the require statement. When inside the require statements, non-strict inequalities (>=, <=) are usually costlier than strict equalities (>, <).
+
+Lines: ["45:45","104:104"]	
+It is recommended to go through the code logic, and, if possible, modify the non-strict inequalities with the strict ones to save ~3 gas as long as the logic of the code is not affected.
+
+13.	SIMILAR DATATYPES CAN BE PACKED TOGETHER	gas	0	
+The contract is found to be using similar data types within a struct, leading to extra gas usage in Solidity. When a struct incorporates fields with identical data types (such as multiple uint256 variables), failing to pack them efficiently can result in alignment gaps and increased gas consumption due to inefficient storage usage.
+
+Lines: ["12:18"]	
+It is advisable to implement effective struct packing techniques. By organizing struct fields with similar data types sequentially and ensuring proper alignment, you can minimize storage overhead and optimize gas consumption.
+
+14.	AVOID RE-STORING VALUES	gas	0	
+The function is found to be allowing re-storing the value in the contract's state variable even when the old value is equal to the new value. This practice results in unnecessary gas consumption due to the Gsreset operation (2900 gas), which could be avoided. If the old value and the new value are the same, not updating the storage would avoid this cost and could instead incur a Gcoldsload (2100 gas) or a Gwarmaccess (100 gas), potentially saving gas.
+
+Lines: ["62:82"]	
+To optimize gas usage, add a check to compare the old value with the new value before updating the storage. Only perform the storage update if the new value is different from the old value. This approach will prevent unnecessary storage writes and reduce gas consumption.
+
+15.	ASSIGNING TO STRUCTS CAN BE MORE EFFICIENT	gas	0	
+The contract is found to contain a struct with multiple variables defined in it. When a struct is assigned in a single operation, Solidity may perform costly storage operations, which can be inefficient. This often results in increased gas costs due to multiple SLOAD and SSTORE operations happening at once
+
+Lines: ["67:73"]	
+Instead of assigning all struct elements at once, initialize the struct as empty and assign each element individually. This can help in reducing gas costs by minimizing potentially expensive storage operations in a single transaction.
+
+16.	LONG REQUIRE/REVERT STRINGS	gas	2	
+The require() and revert() functions take an input string to show errors if the validation fails.
+This strings inside these functions that are longer than 32 bytes require at least one additional MSTORE, along with additional overhead for computing memory offset, and other parameters.
+
+Lines: ["89:92"]	
+It is recommended to short the strings passed inside require() and revert() to fit under 32 bytes. This will decrease the gas usage at the time of deployment and at runtime when the validation condition is met.
+
+17.	FUNCTION SHOULD RETURN STRUCT	gas	0	
+The function was detected to be returning multiple values.
+Consider using a struct instead of multiple return values for the function. It can improve code readability.
+
+Lines: ["139:158"]	
+Use struct for returning multiple values inside a function, which returns several parameters and improves code readability.
+
+18.	CHEAPER CONDITIONAL OPERATORS	gas	0	
+During compilation, x != 0 is cheaper than x > 0 for unsigned integers in solidity inside conditional statements.
+
+Lines: ["44:44","45:45"]	
+Consider using x != 0 in place of x > 0 in uint wherever possible.
+
+19.	ARRAY LENGTH CACHING	gas	2	
+During each iteration of the loop, reading the length of the array uses more gas than is necessary. In the most favorable scenario, in which the length is read from a memory variable, storing the array length in the stack can save about 3 gas per iteration. In the least favorable scenario, in which external calls are made during each iteration, the amount of gas wasted can be significant.
+
+Lines: ["50:52"]	
+Consider storing the array length of the variable before the loop and use the stored length instead of fetching it in each iterati
